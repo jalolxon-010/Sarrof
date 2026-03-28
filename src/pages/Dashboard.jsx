@@ -132,7 +132,7 @@ const Dashboard = () => {
           onClick={handleSave} 
           className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-black tracking-widest transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
         >
-          MA'LUMOTNI SAQLASH
+          MA'LUMOTNI SAQLAS
         </button>
       </div>
     </div>
