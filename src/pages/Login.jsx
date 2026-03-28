@@ -15,8 +15,9 @@ const Login = () => {
 
     try {
       // Backend-ga login so'rovini yuboramiz
-      const res = await API.post('/auth/login', { username, password });
-      
+// Agar avval '/auth/login' bo'lsa, endi faqat '/login' qiling
+const res = await API.post('/login', { username, password });
+
       if (res.data.token) {
         // Muvaffaqiyatli kirish: Token va holatni saqlaymiz
         localStorage.setItem('token', res.data.token);
