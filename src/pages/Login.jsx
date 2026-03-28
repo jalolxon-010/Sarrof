@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, LogIn, AlertTriangle } from 'lucide-react';
+import API from '../api/api';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -8,32 +9,28 @@ const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Kelajakda bu ma'lumotlar bazadan tekshiriladi
-  const VALID_USERS = [
-    { user: 'sarrof1', pass: 'pass123' },
-    { user: 'sarrof2', pass: 'pass456' }
-  ];
-
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
-    const user = VALID_USERS.find(u => u.user === username && u.pass === password);
-
-    if (user) {
-      // Muvaffaqiyatli kirish
-      localStorage.setItem('isLoggedIn', 'true'); // Vaqtincha saqlash
-      window.location.href = '/'; // Sahifani yangilab, Dashboard-ga o'tkazish
-    } else {
-      // Xato parol
-      setError('Login yoki parol xato! Qaytadan urinib ko\'ring.');
-      // Shake (silkitish) effekti uchun klass qo'shish mumkin
+    try {
+      // Backend-ga login so'rovini yuboramiz
+      const res = await API.post('/auth/login', { username, password });
+      
+      if (res.data.token) {
+        // Muvaffaqiyatli kirish: Token va holatni saqlaymiz
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('isLoggedIn', 'true');
+        window.location.href = '/'; 
+      }
+    } catch (err) {
+      // Xato bo'lsa (parol noto'g'ri yoki server o'chiq)
+      setError(err.response?.data?.message || 'Login yoki parol xato yoki server bilan aloqa yo\'q!');
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      {/* Orqa fondagi bezak */}
       <div className="absolute inset-0 overflow-hidden z-0">
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"></div>
@@ -44,7 +41,7 @@ const Login = () => {
           <div className="inline-flex items-center justify-center p-4 bg-amber-500 rounded-3xl text-black font-black text-3xl mb-5 shadow-xl shadow-amber-500/20">
             $
           </div>
-          <h1 className="text-3xl font-extrabold">Tizimga Kirish</h1>
+          <h1 className="text-3xl font-extrabold text-white">Tizimga Kirish</h1>
           <p className="text-slate-400 mt-2 text-sm">Faqat ruxsat etilgan foydalanuvchilar uchun</p>
         </div>
 

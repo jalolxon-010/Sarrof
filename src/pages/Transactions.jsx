@@ -12,6 +12,7 @@ const Transactions = () => {
 
   const fetchTransactions = async () => {
     try {
+      setLoading(true);
       const res = await API.get('/transactions');
       setList(res.data || []);
     } catch (err) { 
@@ -47,7 +48,8 @@ const Transactions = () => {
   const handleUpdate = async () => {
     try {
       const payload = {
-        ...editModal,
+        person_name: editModal.person_name,
+        type: editModal.type,
         amount_usd: parseFloat(editModal.amount_usd) || 0,
         amount_uzs: parseFloat(editModal.amount_uzs) || 0
       };
@@ -87,7 +89,7 @@ const Transactions = () => {
                 <td className={`px-6 py-4 text-center font-bold ${item.type === 'gave' ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
                    {format(item.amount_uzs)}
                 </td>
-                <td className="px-6 py-4 text-right relative" ref={activeMenu === item.id ? menuRef : null}>
+                <td className="px-6 py-4 text-right relative">
                   <button 
                     onClick={() => setActiveMenu(activeMenu === item.id ? null : item.id)}
                     className={`p-2 rounded-full transition-all ${activeMenu === item.id ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
@@ -96,7 +98,7 @@ const Transactions = () => {
                   </button>
 
                   {activeMenu === item.id && (
-                    <div className="absolute right-12 top-0 z-[60] w-44 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 shadow-2xl rounded-2xl p-1.5 ring-4 ring-slate-50/50 dark:ring-0 transition-all">
+                    <div ref={menuRef} className="absolute right-12 top-0 z-[60] w-44 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 shadow-2xl rounded-2xl p-1.5 ring-4 ring-slate-50/50 dark:ring-0 transition-all">
                       <button 
                         onClick={() => { setEditModal(item); setActiveMenu(null); }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-black text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all"
@@ -118,7 +120,6 @@ const Transactions = () => {
         </table>
       </div>
 
-      {/* TAHRIRLASH MODAL OYNASI */}
       {editModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md transition-all">
           <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-[32px] shadow-2xl p-8 border border-white/20 dark:border-slate-700 animate-in zoom-in duration-200">
@@ -136,7 +137,6 @@ const Transactions = () => {
             </div>
             
             <div className="space-y-5">
-              {/* Shaxs ismi */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Shaxs ismi</label>
                 <input 
@@ -146,7 +146,6 @@ const Transactions = () => {
                 />
               </div>
 
-              {/* TRANZAKSIYA TURI (SELECT) */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Amal turi</label>
                 <div className="relative group">
@@ -162,7 +161,6 @@ const Transactions = () => {
                 </div>
               </div>
 
-              {/* Summalar */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">USD ($)</label>

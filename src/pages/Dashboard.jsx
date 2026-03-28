@@ -7,14 +7,37 @@ const Dashboard = () => {
   const [form, setForm] = useState({ person_name: '', amount_usd: '', amount_uzs: '', type: 'gave' });
   const kurs = 12850;
 
-  useEffect(() => { fetchAll(); }, []);
-  const fetchAll = async () => { try { const res = await API.get('/transactions'); setList(res.data); } catch (e) {} };
+  useEffect(() => { 
+    fetchAll(); 
+  }, []);
+
+  const fetchAll = async () => { 
+    try { 
+      // api.js dagi baseURL oxiriga /api qo'shilgan bo'lsa, shunchaki '/transactions' qoladi
+      const res = await API.get('/transactions'); 
+      setList(res.data); 
+    } catch (e) {
+      console.error("Ma'lumot olishda xato:", e);
+    } 
+  };
 
   const handleSave = async () => {
     if(!form.person_name) return alert("Ismni yozing");
-    await API.post('/transactions/add', form);
-    setForm({ person_name: '', amount_usd: '', amount_uzs: '', type: 'gave' });
-    fetchAll();
+    
+    try {
+      // API manzili backend'dagi route'ga mos bo'lishi kerak
+      await API.post('/transactions/add', form);
+      
+      // Formani tozalash
+      setForm({ person_name: '', amount_usd: '', amount_uzs: '', type: 'gave' });
+      
+      // Ro'yxatni qayta yuklash
+      fetchAll();
+      alert("Muvaffaqiyatli saqlandi!");
+    } catch (error) {
+      console.error("Saqlashda xato:", error);
+      alert("Xatolik yuz berdi. Backend ulanishini tekshiring.");
+    }
   };
 
   const totals = list.reduce((acc, curr) => {
@@ -69,25 +92,48 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">Ism</label>
-            <input className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 transition-all" value={form.person_name} onChange={e => setForm({...form, person_name: e.target.value})} />
+            <input 
+              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 transition-all" 
+              value={form.person_name} 
+              onChange={e => setForm({...form, person_name: e.target.value})} 
+            />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">Turi</label>
-            <select className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent outline-none focus:border-indigo-500 font-bold" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
+            <select 
+              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent outline-none focus:border-indigo-500 font-bold" 
+              value={form.type} 
+              onChange={e => setForm({...form, type: e.target.value})}
+            >
               <option value="gave">Berdim (+)</option>
               <option value="took">Oldim (-)</option>
             </select>
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">USD</label>
-            <input type="number" className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent focus:border-indigo-500" value={form.amount_usd} onChange={e => setForm({...form, amount_usd: e.target.value})} />
+            <input 
+              type="number" 
+              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent focus:border-indigo-500" 
+              value={form.amount_usd} 
+              onChange={e => setForm({...form, amount_usd: e.target.value})} 
+            />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">UZS</label>
-            <input type="number" className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent focus:border-indigo-500" value={form.amount_uzs} onChange={e => setForm({...form, amount_uzs: e.target.value})} />
+            <input 
+              type="number" 
+              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent focus:border-indigo-500" 
+              value={form.amount_uzs} 
+              onChange={e => setForm({...form, amount_uzs: e.target.value})} 
+            />
           </div>
         </div>
-        <button onClick={handleSave} className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-black tracking-widest transition-all shadow-lg shadow-indigo-200 dark:shadow-none">MA'LUMOTNI SAQLASH</button>
+        <button 
+          onClick={handleSave} 
+          className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-black tracking-widest transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
+        >
+          MA'LUMOTNI SAQLASH
+        </button>
       </div>
     </div>
   );

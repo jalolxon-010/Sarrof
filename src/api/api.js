@@ -1,12 +1,14 @@
 import axios from 'axios';
 
-// Backend bilan bog'lanish uchun asosiy sozlamalar
+// Vercel-dagi VITE_API_URL ni o'qiydi. 
+// Agar u yerda xato bo'lsa yoki topilmasa, Render-dagi backend manzilingizni zaxira sifatida yozib qo'yamiz.
+const baseURL = import.meta.env.VITE_API_URL || 'https://sarrof-backend.onrender.com/api';
+
 const API = axios.create({
-  // Backend serveringiz manzili (odatda 3000-portda bo'ladi)
-  baseURL: 'http://localhost:3000/api', 
+  baseURL: baseURL,
 });
 
-// Agar foydalanuvchi login qilgan bo'lsa, har bir so'rovga tokenni qo'shib yuborish
+// Har bir so'rovga tokenni qo'shib yuborish (Interceptors)
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
