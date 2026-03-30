@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import API from '../api/api'; // O'zingiz yaratgan API instance-ni import qiling
 import { DollarSign, Save, Edit3, RefreshCcw } from 'lucide-react';
 
 const Setting = () => {
@@ -8,22 +8,17 @@ const Setting = () => {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
-    // Backend URL (Render dagi manzilingiz)
-    const API_URL = "https://sarroff1.onrender.com/api/settings/usd-rate";
-
     // 1. Kursni bazadan yuklab olish
     const fetchRate = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(API_URL);
+            // baseURL ichida /api bor, shuning uchun faqat davomini yozamiz
+            const res = await API.get('/settings/usd-rate'); 
             setRate(res.data.rate);
-            setMessage({ type: 'success', text: 'Kurs yangilandi' });
         } catch (err) {
             setMessage({ type: 'error', text: 'Kursni yuklab bo\'lmadi' });
         } finally {
             setLoading(false);
-            // Xabarni 3 soniyadan keyin o'chirish
-            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         }
     };
 
@@ -33,18 +28,26 @@ const Setting = () => {
 
     // 2. Kursni yangilash
     const handleUpdate = async () => {
+        if(!rate || rate <= 0) {
+            setMessage({ type: 'error', text: 'To\'g\'ri qiymat kiriting' });
+            return;
+        }
         setLoading(true);
         try {
-            await axios.post(API_URL, { rate: rate });
+            // Bu yerda ham faqat endpoint nomi
+            await API.post('/settings/usd-rate', { rate: rate });
             setIsEditing(false);
             setMessage({ type: 'success', text: 'Muvaffaqiyatli saqlandi!' });
         } catch (err) {
+            console.error(err);
             setMessage({ type: 'error', text: 'Saqlashda xatolik yuz berdi' });
         } finally {
             setLoading(false);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         }
     };
+
+    // ... (qolgan JSX kodlari o'sha-o'sha)
 
     return (
         <div className="p-6 max-w-2xl mx-auto">
