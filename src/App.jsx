@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
+import Setting from './pages/Settings'; // 1. Setting sahifasini import qildik
 import Login from './pages/Login';
 import Sidebar from './components/Sidebar';
 
@@ -23,11 +24,14 @@ function App() {
   const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('token'); // Agar token ishlatsangiz uni ham o'chiring
   };
 
   return (
     <Router>
       <div className={`min-h-screen transition-all duration-500 ${darkMode ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
+        
+        {/* Sidebar faqat login bo'lganda ko'rinadi */}
         {isLoggedIn && (
           <Sidebar 
             onLogout={handleLogout} 
@@ -38,9 +42,17 @@ function App() {
         
         <main className={`transition-all duration-300 ${isLoggedIn ? 'md:ml-64 p-4 md:p-8 pb-24' : 'p-0'}`}>
           <Routes>
+            {/* Login sahifasi */}
             <Route path="/login" element={!isLoggedIn ? <Login onLogin={() => setIsLoggedIn(true)} /> : <Navigate to="/" />} />
+            
+            {/* Himoyalangan sahifalar */}
             <Route path="/" element={isLoggedIn ? <Dashboard /> : <Navigate to="/login" />} />
             <Route path="/transactions" element={isLoggedIn ? <Transactions /> : <Navigate to="/login" />} />
+            
+            {/* 2. Setting sahifasi uchun yangi yo'l (route) qo'shildi */}
+            <Route path="/settings" element={isLoggedIn ? <Setting /> : <Navigate to="/login" />} />
+            
+            {/* Noto'g'ri manzillar uchun redirect */}
             <Route path="*" element={<Navigate to={isLoggedIn ? "/" : "/login"} />} />
           </Routes>
         </main>
