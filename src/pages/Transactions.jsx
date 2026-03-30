@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import API from '../api/api';
-import { MoreVertical, Trash2, Clock, Edit2, X, CheckCircle2, AlertCircle, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { 
+  MoreVertical, Trash2, Clock, Edit2, X, 
+  CheckCircle2, AlertCircle, ArrowUpRight, ArrowDownLeft 
+} from 'lucide-react';
 
 const Transactions = () => {
   const [list, setList] = useState([]);
@@ -25,7 +28,9 @@ const Transactions = () => {
 
   useEffect(() => {
     fetchTransactions();
-    const closeMenu = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setActiveMenu(null); };
+    const closeMenu = (e) => { 
+      if (menuRef.current && !menuRef.current.contains(e.target)) setActiveMenu(null); 
+    };
     document.addEventListener("mousedown", closeMenu);
     return () => document.removeEventListener("mousedown", closeMenu);
   }, []);
@@ -59,10 +64,8 @@ const Transactions = () => {
       show: true,
       data: {
         ...item,
-        // Dashboard mantiqiga moslash uchun turlarni aniqlaymiz
         usd_type: item.amount_usd >= 0 ? 'gave' : 'took',
         uzs_type: item.amount_uzs >= 0 ? 'gave' : 'took',
-        // Sonlarni musbat holda inputga chiqaramiz
         amount_usd: Math.abs(item.amount_usd),
         amount_uzs: Math.abs(item.amount_uzs)
       }
@@ -80,7 +83,6 @@ const Transactions = () => {
         person_name: data.person_name,
         amount_usd: data.usd_type === 'took' ? -Math.abs(data.amount_usd) : Math.abs(data.amount_usd),
         amount_uzs: data.uzs_type === 'took' ? -Math.abs(data.amount_uzs) : Math.abs(data.amount_uzs),
-        type: data.amount_usd >= 0 ? data.usd_type : data.uzs_type
       };
 
       await API.put(`/transactions/${data.id}`, payload);
@@ -99,88 +101,96 @@ const Transactions = () => {
     });
   };
 
-  if (loading) return <div className="p-20 text-center font-bold text-slate-400">Yuklanmoqda...</div>;
+  if (loading) return <div className="p-20 text-center font-bold text-slate-400 animate-pulse">Yuklanmoqda...</div>;
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden relative">
       
-      {/* 1. Xabarnoma Modali (Notification) */}
+      {/* 1. Xabarnoma Modali */}
       {notification.show && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-800 w-full max-w-xs rounded-[2rem] p-6 text-center shadow-2xl border dark:border-slate-700">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-xs rounded-[2rem] p-6 text-center shadow-2xl border dark:border-slate-700 animate-in zoom-in duration-200">
             <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-3 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'}`}>
               {notification.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
             </div>
             <h4 className="text-lg font-bold dark:text-white">{notification.title}</h4>
             <p className="text-xs text-slate-500 mt-1 mb-4">{notification.message}</p>
-            {notification.type === 'error' && <button onClick={() => setNotification({show:false})} className="w-full py-2 bg-slate-100 dark:bg-slate-700 rounded-xl text-sm font-bold dark:text-white">Yopish</button>}
+            {notification.type === 'error' && <button onClick={() => setNotification({show:false})} className="w-full py-2 bg-slate-100 dark:bg-slate-700 rounded-xl text-sm font-bold dark:text-white font-black uppercase tracking-widest">Yopish</button>}
           </div>
         </div>
       )}
 
-      {/* 2. Tasdiqlash Modali (Confirm Delete) */}
+      {/* 2. Tasdiqlash Modali */}
       {confirmModal.show && (
         <div className="fixed inset-0 z-[105] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-          <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-[2.5rem] p-8 text-center shadow-2xl border dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-[2.5rem] p-8 text-center shadow-2xl border dark:border-slate-700 animate-in fade-in zoom-in duration-200">
             <div className="mx-auto w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-4"><Trash2 size={32} /></div>
-            <h3 className="text-xl font-black text-slate-800 dark:text-white">O'chirilsinmi?</h3>
-            <p className="text-slate-500 text-sm mt-2 mb-8">Ushbu amalni ortga qaytarib bo'lmaydi.</p>
+            <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">O'chirilsinmi?</h3>
+            <p className="text-slate-500 text-sm mt-2 mb-8 font-medium">Ushbu amalni ortga qaytarib bo'lmaydi.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmModal({show:false, id:null})} className="flex-1 py-4 bg-slate-100 dark:bg-slate-700 rounded-2xl font-bold dark:text-white">Bekor qilish</button>
-              <button onClick={confirmDelete} className="flex-1 py-4 bg-rose-500 text-white rounded-2xl font-bold shadow-lg shadow-rose-200 dark:shadow-none">O'chirish</button>
+              <button onClick={() => setConfirmModal({show:false, id:null})} className="flex-1 py-4 bg-slate-100 dark:bg-slate-700 rounded-2xl font-bold dark:text-white uppercase text-[11px] tracking-widest transition-all hover:bg-slate-200">Bekor qilish</button>
+              <button onClick={confirmDelete} className="flex-1 py-4 bg-rose-500 text-white rounded-2xl font-bold shadow-lg shadow-rose-200 dark:shadow-none uppercase text-[11px] tracking-widest transition-all hover:bg-rose-600">O'chirish</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 3. Tahrirlash Modali (Edit Modal) */}
+      {/* 3. Tahrirlash Modali (RESPONSIVE) */}
       {editModal.show && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in zoom-in duration-200">
-          <div className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl border dark:border-slate-700">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-slate-800 dark:text-white">Tahrirlash</h3>
-              <button onClick={() => setEditModal({show:false, data:null})} className="p-2 bg-slate-50 dark:bg-slate-700 rounded-full text-slate-400"><X size={20}/></button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-[2.5rem] shadow-2xl border dark:border-slate-700 overflow-hidden animate-in zoom-in duration-200">
+            
+            <div className="p-6 md:p-8 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/20">
+              <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">Tahrirlash</h3>
+              <button onClick={() => setEditModal({show:false, data:null})} className="p-3 bg-white dark:bg-slate-700 rounded-2xl text-slate-400 hover:text-rose-500 transition-all shadow-sm"><X size={20}/></button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Shaxs ismi</label>
-                <input className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border-2 border-transparent focus:border-indigo-500 outline-none dark:text-white" value={editModal.data.person_name} onChange={e => setEditModal({...editModal, data: {...editModal.data, person_name: e.target.value}})} />
+            <div className="p-6 md:p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Shaxs ismi</label>
+                <input className="w-full bg-slate-50 dark:bg-slate-900 p-5 rounded-2xl border-2 border-transparent focus:border-indigo-500 outline-none dark:text-white font-bold text-lg transition-all" value={editModal.data.person_name} onChange={e => setEditModal({...editModal, data: {...editModal.data, person_name: e.target.value}})} />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 flex justify-between">USD ($) 
-                    <span className={editModal.data.usd_type === 'gave' ? 'text-emerald-500' : 'text-rose-500'}>{editModal.data.usd_type === 'gave' ? 'Berdim' : 'Oldim'}</span>
-                  </label>
+                {/* USD Card */}
+                <div className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-[2rem] border dark:border-slate-700/50">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dollar ($)</span>
+                    <span className={`text-[9px] font-black px-3 py-1 rounded-full ${editModal.data.usd_type === 'gave' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                      {editModal.data.usd_type === 'gave' ? 'BERDIM (+)' : 'OLDIM (-)'}
+                    </span>
+                  </div>
                   <div className="flex gap-2">
-                    <input type="number" className="flex-1 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none dark:text-white" value={editModal.data.amount_usd} onChange={e => setEditModal({...editModal, data: {...editModal.data, amount_usd: e.target.value}})} />
-                    <button onClick={() => setEditModal({...editModal, data: {...editModal.data, usd_type: editModal.data.usd_type === 'gave' ? 'took' : 'gave'}})} className={`p-4 rounded-2xl ${editModal.data.usd_type === 'gave' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                    <input type="number" className="flex-1 bg-white dark:bg-slate-800 px-4 py-3 rounded-xl outline-none dark:text-white font-black text-xl" value={editModal.data.amount_usd} onChange={e => setEditModal({...editModal, data: {...editModal.data, amount_usd: e.target.value}})} />
+                    <button onClick={() => setEditModal({...editModal, data: {...editModal.data, usd_type: editModal.data.usd_type === 'gave' ? 'took' : 'gave'}})} className={`p-4 rounded-xl transition-all shadow-sm ${editModal.data.usd_type === 'gave' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
                       {editModal.data.usd_type === 'gave' ? <ArrowUpRight size={20}/> : <ArrowDownLeft size={20}/>}
                     </button>
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 flex justify-between">UZS (So'm)
-                    <span className={editModal.data.uzs_type === 'gave' ? 'text-emerald-500' : 'text-rose-500'}>{editModal.data.uzs_type === 'gave' ? 'Berdim' : 'Oldim'}</span>
-                  </label>
+                {/* UZS Card */}
+                <div className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-[2rem] border dark:border-slate-700/50">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">So'm (UZS)</span>
+                    <span className={`text-[9px] font-black px-3 py-1 rounded-full ${editModal.data.uzs_type === 'gave' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                      {editModal.data.uzs_type === 'gave' ? 'BERDIM (+)' : 'OLDIM (-)'}
+                    </span>
+                  </div>
                   <div className="flex gap-2">
-                    <input type="number" className="flex-1 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none dark:text-white" value={editModal.data.amount_uzs} onChange={e => setEditModal({...editModal, data: {...editModal.data, amount_uzs: e.target.value}})} />
-                    <button onClick={() => setEditModal({...editModal, data: {...editModal.data, uzs_type: editModal.data.uzs_type === 'gave' ? 'took' : 'gave'}})} className={`p-4 rounded-2xl ${editModal.data.uzs_type === 'gave' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                    <input type="number" className="flex-1 bg-white dark:bg-slate-800 px-4 py-3 rounded-xl outline-none dark:text-white font-black text-xl" value={editModal.data.amount_uzs} onChange={e => setEditModal({...editModal, data: {...editModal.data, amount_uzs: e.target.value}})} />
+                    <button onClick={() => setEditModal({...editModal, data: {...editModal.data, uzs_type: editModal.data.uzs_type === 'gave' ? 'took' : 'gave'}})} className={`p-4 rounded-xl transition-all shadow-sm ${editModal.data.uzs_type === 'gave' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
                       {editModal.data.uzs_type === 'gave' ? <ArrowUpRight size={20}/> : <ArrowDownLeft size={20}/>}
                     </button>
                   </div>
                 </div>
               </div>
 
-              <button onClick={handleUpdate} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black mt-4 shadow-xl hover:bg-indigo-700 transition-all uppercase tracking-widest">Saqlash</button>
+              <button onClick={handleUpdate} className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-xl hover:bg-indigo-700 transition-all uppercase tracking-widest mt-4">Saqlash</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* JADVAL QISMI */}
       <div className="p-6 border-b border-slate-50 dark:border-slate-700 flex justify-between items-center">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">Amallar Tarixi</h2>
       </div>
