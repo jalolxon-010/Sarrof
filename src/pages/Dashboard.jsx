@@ -47,11 +47,16 @@ const Dashboard = () => {
     if (usd === 0 && uzs === 0) return showNotification('error', 'Xato', 'Miqdor kiriting');
 
     try {
+      // BACKEND UCHUN MOSLASHTIRISH:
+      // Agar backend faqat bitta 'type' qabul qilsa, asosiy miqdorga qarab belgilaymiz
+      const mainType = usd > 0 ? form.usd_type : form.uzs_type;
+
       const dataToSave = {
         person_name: form.person_name,
-        // Har bir valyuta o'z holatiga ko'ra musbat yoki manfiy saqlanadi
-        amount_usd: form.usd_type === 'took' ? -usd : usd,
-        amount_uzs: form.uzs_type === 'took' ? -uzs : uzs,
+        // Backend musbat son kutayotgan bo'lsa Math.abs ishlatamiz
+        amount_usd: form.usd_type === 'took' ? -Math.abs(usd) : Math.abs(usd),
+        amount_uzs: form.uzs_type === 'took' ? -Math.abs(uzs) : Math.abs(uzs),
+        type: mainType, // Backenddagi enumga moslash (gave/took)
         date: new Date().toISOString()
       };
 
@@ -60,7 +65,8 @@ const Dashboard = () => {
       fetchAll();
       showNotification('success', 'Saqlandi', 'Ma’lumot muvaffaqiyatli qo‘shildi');
     } catch (error) {
-      showNotification('error', 'Xatolik', 'Serverda xato yuz berdi');
+      console.error("Saqlashda xato:", error.response?.data || error.message);
+      showNotification('error', 'Server Xatosi', 'Backend ma’lumotni qabul qilmadi (500)');
     }
   };
 
@@ -74,7 +80,6 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Modal */}
       {modal.show && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-[2.5rem] p-8 text-center shadow-2xl border border-slate-100 dark:border-slate-700">
@@ -83,7 +88,7 @@ const Dashboard = () => {
             </div>
             <h3 className="text-xl font-black text-slate-800 dark:text-white">{modal.title}</h3>
             <p className="text-slate-500 text-sm mb-6">{modal.message}</p>
-            <button onClick={() => setModal({...modal, show: false})} className="w-full py-3 bg-slate-100 dark:bg-slate-700 rounded-xl font-bold">Yopish</button>
+            <button onClick={() => setModal({...modal, show: false})} className="w-full py-3 bg-slate-100 dark:bg-slate-700 rounded-xl font-bold dark:text-white">Yopish</button>
           </div>
         </div>
       )}
@@ -95,7 +100,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Kartalar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm relative overflow-hidden">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">USD Balans</p>
@@ -106,22 +110,20 @@ const Dashboard = () => {
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">UZS Balans</p>
           <h2 className={`text-3xl font-black mt-2 ${totals.uzs >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{format(totals.uzs)}</h2>
         </div>
-        <div className="bg-indigo-600 p-6 rounded-[2rem] text-white shadow-xl shadow-indigo-200 dark:shadow-none">
+        <div className="bg-indigo-600 p-6 rounded-[2rem] text-white shadow-xl">
           <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">Umumiy (So'mda)</p>
           <h2 className="text-3xl font-black mt-2">{format((totals.uzs + totals.usd * kurs).toFixed(0))}</h2>
         </div>
       </div>
 
-      {/* Yangi Operatsiya */}
       <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-xl">
         <h3 className="font-bold mb-6 text-slate-800 dark:text-white flex items-center gap-2"><PlusCircle size={20}/> Yangi operatsiya</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Shaxs ismi</label>
-            <input className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 dark:text-white" value={form.person_name} onChange={e => setForm({...form, person_name: e.target.value})} placeholder="Kimga/Kimdan?" />
+            <input className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 dark:text-white" value={form.person_name} onChange={e => setForm({...form, person_name: e.target.value})} placeholder="Ism kiriting" />
           </div>
 
-          {/* USD Input gibrid */}
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 flex justify-between">USD ($) 
               <span className={form.usd_type === 'gave' ? 'text-emerald-500' : 'text-rose-500'}>{form.usd_type === 'gave' ? 'Berdim (+)' : 'Oldim (-)'}</span>
@@ -134,7 +136,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* UZS Input gibrid */}
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 flex justify-between">UZS (So'm)
               <span className={form.uzs_type === 'gave' ? 'text-emerald-500' : 'text-rose-500'}>{form.uzs_type === 'gave' ? 'Berdim (+)' : 'Oldim (-)'}</span>

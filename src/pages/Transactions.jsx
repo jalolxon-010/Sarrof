@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import API from '../api/api';
-import { MoreVertical, Edit2, Trash2, X, CheckCircle, Clock, Calendar } from 'lucide-react';
+import { MoreVertical, Trash2, Clock } from 'lucide-react';
 
 const Transactions = () => {
   const [list, setList] = useState([]);
@@ -25,11 +25,11 @@ const Transactions = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    if (window.confirm("O'chirilsinmi?")) {
+    if (window.confirm("Haqiqatdan ham o'chirmoqchimisiz?")) {
       try {
         await API.delete(`/transactions/${id}`);
         fetchTransactions();
-      } catch (err) { alert("Xato!"); }
+      } catch (err) { alert("O'chirishda xatolik!"); }
     }
   };
 
@@ -47,9 +47,8 @@ const Transactions = () => {
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-slate-50 dark:border-slate-700 flex justify-between items-center">
+      <div className="p-6 border-b border-slate-50 dark:border-slate-700">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">Amallar Tarixi</h2>
-        <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-900 px-3 py-1 rounded-full text-slate-500 uppercase tracking-tighter">Jami: {list.length} ta</span>
       </div>
 
       <div className="overflow-x-auto">
@@ -82,7 +81,7 @@ const Transactions = () => {
                   <button onClick={() => setActiveMenu(activeMenu === item.id ? null : item.id)} className="p-2 text-slate-400 hover:text-indigo-600 transition-all"><MoreVertical size={18} /></button>
                   {activeMenu === item.id && (
                     <div ref={menuRef} className="absolute right-12 top-0 z-50 w-40 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border dark:border-slate-700 p-1">
-                      <button onClick={() => handleDelete(item.id)} className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all">
+                      <button onClick={() => handleDelete(item.id)} className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-bold text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
                         <Trash2 size={14} /> O'CHIRISH
                       </button>
                     </div>
