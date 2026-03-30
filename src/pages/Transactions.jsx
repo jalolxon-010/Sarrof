@@ -164,8 +164,8 @@ const Transactions = () => {
                       <input type="number" className="w-full bg-transparent px-3 py-1 outline-none dark:text-white font-black text-lg" value={editModal.data.amount_uzs} onChange={e => setEditModal({...editModal, data: {...editModal.data, amount_uzs: e.target.value}})} placeholder="0" />
                    </div>
                    <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl shadow-sm border dark:border-slate-700">
-                      <button onClick={() => setEditModal({...editModal, data: {...editModal.data, uzs_type: 'gave'}})} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${editModal.data.uzs_type === 'gave' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-400'}`}>BERDIM</button>
-                      <button onClick={() => setEditModal({...editModal, data: {...editModal.data, uzs_type: 'took'}})} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${editModal.data.uzs_type === 'took' ? 'bg-rose-500 text-white shadow-lg' : 'text-slate-400'}`}>OLDIM</button>
+                      <button onClick={() => setEditModal({...editModal, data: {...editModal.data, uzs_type: 'gave'}})} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${editModal.data.uzs_type === 'gave' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-400'}`}>BERDIM(+)</button>
+                      <button onClick={() => setEditModal({...editModal, data: {...editModal.data, uzs_type: 'took'}})} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${editModal.data.uzs_type === 'took' ? 'bg-rose-500 text-white shadow-lg' : 'text-slate-400'}`}>OLDIM(-)</button>
                    </div>
                 </div>
               </div>
