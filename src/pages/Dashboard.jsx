@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/api';
-import { PlusCircle, Wallet, DollarSign, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { PlusCircle, Wallet, DollarSign, CheckCircle2, AlertCircle, X, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
 const Dashboard = () => {
   const [list, setList] = useState([]);
-  const [form, setForm] = useState({ person_name: '', amount_usd: '', amount_uzs: '', type: 'gave' });
   const [kurs, setKurs] = useState(0);
-  
-  // Modal uchun statelar
+  const [form, setForm] = useState({ 
+    person_name: '', 
+    amount_usd: '', 
+    usd_type: 'gave', 
+    amount_uzs: '', 
+    uzs_type: 'gave' 
+  });
   const [modal, setModal] = useState({ show: false, type: '', title: '', message: '' });
 
   useEffect(() => { 
@@ -18,182 +22,132 @@ const Dashboard = () => {
   const fetchAll = async () => { 
     try { 
       const res = await API.get('/transactions'); 
-      setList(res.data); 
-    } catch (e) {
-      console.error("Ma'lumot olishda xato:", e);
-    } 
+      setList(res.data || []); 
+    } catch (e) { console.error(e); } 
   };
 
   const fetchKurs = async () => {
     try {
       const res = await API.get('/settings/usd-rate');
       setKurs(parseFloat(res.data.rate));
-    } catch (e) {
-      console.error("Kursni olishda xato:", e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const showNotification = (type, title, message) => {
     setModal({ show: true, type, title, message });
-    if (type === 'success') {
-      setTimeout(() => setModal({ ...modal, show: false }), 3000);
-    }
+    if (type === 'success') setTimeout(() => setModal(prev => ({ ...prev, show: false })), 2500);
   };
 
   const handleSave = async () => {
-    // 1. Ism tekshiruvi
-    if(!form.person_name.trim()) {
-        return showNotification('error', 'Xatolik', 'Iltimos, ismni kiriting');
-    }
-
-    // 2. Kamida bitta maydon to'ldirilgan bo'lishi kerak mantiqi
+    if(!form.person_name.trim()) return showNotification('error', 'Xato', 'Ismni kiriting');
+    
     const usd = parseFloat(form.amount_usd) || 0;
     const uzs = parseFloat(form.amount_uzs) || 0;
 
-    if (usd <= 0 && uzs <= 0) {
-        return showNotification('error', 'Xatolik', 'Kamida bitta maydonga (USD yoki UZS) miqdor kiriting');
-    }
+    if (usd === 0 && uzs === 0) return showNotification('error', 'Xato', 'Miqdor kiriting');
 
     try {
-      // Backendga yuboriladigan ma'lumotni tozalash
       const dataToSave = {
         person_name: form.person_name,
-        type: form.type,
-        amount_usd: usd,
-        amount_uzs: uzs
+        // Har bir valyuta o'z holatiga ko'ra musbat yoki manfiy saqlanadi
+        amount_usd: form.usd_type === 'took' ? -usd : usd,
+        amount_uzs: form.uzs_type === 'took' ? -uzs : uzs,
+        date: new Date().toISOString()
       };
 
       await API.post('/transactions/add', dataToSave);
-      
-      setForm({ person_name: '', amount_usd: '', amount_uzs: '', type: 'gave' });
+      setForm({ person_name: '', amount_usd: '', usd_type: 'gave', amount_uzs: '', uzs_type: 'gave' });
       fetchAll();
-      showNotification('success', 'Tayyor!', 'Ma’lumot muvaffaqiyatli saqlandi');
+      showNotification('success', 'Saqlandi', 'Ma’lumot muvaffaqiyatli qo‘shildi');
     } catch (error) {
-      console.error("Saqlashda xato:", error);
-      showNotification('error', 'Xatolik', 'Server bilan bog‘lanishda xatolik yuz berdi');
+      showNotification('error', 'Xatolik', 'Serverda xato yuz berdi');
     }
   };
 
   const totals = list.reduce((acc, curr) => {
-    const usd = parseFloat(curr.amount_usd) || 0;
-    const uzs = parseFloat(curr.amount_uzs) || 0;
-    curr.type === 'gave' ? (acc.usd += usd, acc.uzs += uzs) : (acc.usd -= usd, acc.uzs -= uzs);
+    acc.usd += (parseFloat(curr.amount_usd) || 0);
+    acc.uzs += (parseFloat(curr.amount_uzs) || 0);
     return acc;
   }, { usd: 0, uzs: 0 });
 
   const format = (n) => new Intl.NumberFormat().format(n);
 
   return (
-    <div className="relative space-y-8 animate-in fade-in duration-500">
-      
-      {/* --- CUSTOM MODAL --- */}
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Modal */}
       {modal.show && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 dark:border-slate-700 text-center relative overflow-hidden">
-            <button onClick={() => setModal({...modal, show: false})} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600"><X size={20}/></button>
-            
-            <div className={`mx-auto w-20 h-20 rounded-3xl flex items-center justify-center mb-6 ${modal.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'}`}>
-              {modal.type === 'success' ? <CheckCircle2 size={44} /> : <AlertCircle size={44} />}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-[2.5rem] p-8 text-center shadow-2xl border border-slate-100 dark:border-slate-700">
+            <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${modal.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'}`}>
+              {modal.type === 'success' ? <CheckCircle2 size={32} /> : <AlertCircle size={32} />}
             </div>
-            
-            <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-2">{modal.title}</h3>
-            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">{modal.message}</p>
-            
-            <button 
-              onClick={() => setModal({...modal, show: false})}
-              className={`w-full py-4 rounded-2xl font-bold tracking-wide transition-all ${modal.type === 'success' ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-rose-500 text-white hover:bg-rose-600'}`}
-            >
-              Tushunarli
-            </button>
+            <h3 className="text-xl font-black text-slate-800 dark:text-white">{modal.title}</h3>
+            <p className="text-slate-500 text-sm mb-6">{modal.message}</p>
+            <button onClick={() => setModal({...modal, show: false})} className="w-full py-3 bg-slate-100 dark:bg-slate-700 rounded-xl font-bold">Yopish</button>
           </div>
         </div>
       )}
 
-      {/* --- HEADER --- */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-black text-slate-800 dark:text-white">Asosiy Panel</h1>
-        <div className="text-[10px] md:text-xs font-bold px-3 py-1 bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 rounded-full border border-indigo-200 dark:border-indigo-500/30 tracking-tighter">
-          KURS: 1$ = {format(kurs)} UZS
+        <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Asosiy Panel</h1>
+        <div className="px-4 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-full border border-indigo-100 dark:border-indigo-500/20 text-xs font-bold">
+          1$ = {format(kurs)} UZS
         </div>
       </div>
 
-      {/* --- CARDS --- */}
+      {/* Kartalar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="relative overflow-hidden bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm transition-all">
-          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">USD Balans</p>
-          <h2 className={`text-3xl font-black mt-2 ${totals.usd >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-            {totals.usd >= 0 ? '+' : ''}{format(totals.usd)} $
-          </h2>
-          <DollarSign className="absolute -right-4 -bottom-4 text-slate-50 dark:text-slate-700/20" size={120} />
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm relative overflow-hidden">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">USD Balans</p>
+          <h2 className={`text-3xl font-black mt-2 ${totals.usd >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{format(totals.usd)} $</h2>
+          <DollarSign className="absolute -right-4 -bottom-4 text-slate-50 dark:text-slate-700/10" size={120} />
         </div>
-
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm transition-all">
-          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">UZS Balans</p>
-          <h2 className={`text-3xl font-black mt-2 ${totals.uzs >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-            {totals.uzs >= 0 ? '+' : ''}{format(totals.uzs)}
-          </h2>
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">UZS Balans</p>
+          <h2 className={`text-3xl font-black mt-2 ${totals.uzs >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{format(totals.uzs)}</h2>
         </div>
-
-        <div className="bg-indigo-600 p-6 rounded-[2rem] text-white shadow-xl shadow-indigo-200 dark:shadow-none relative overflow-hidden">
+        <div className="bg-indigo-600 p-6 rounded-[2rem] text-white shadow-xl shadow-indigo-200 dark:shadow-none">
           <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">Umumiy (So'mda)</p>
-          <h2 className="text-3xl font-black mt-2 tracking-tighter">{format((totals.uzs + totals.usd * kurs).toFixed(0))}</h2>
-          <div className="absolute top-0 right-0 p-4 opacity-20"><Wallet size={40} /></div>
+          <h2 className="text-3xl font-black mt-2">{format((totals.uzs + totals.usd * kurs).toFixed(0))}</h2>
         </div>
       </div>
 
-      {/* --- FORM --- */}
+      {/* Yangi Operatsiya */}
       <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-xl">
-        <h3 className="text-lg font-bold mb-6 text-slate-800 dark:text-white flex items-center gap-2">
-          <PlusCircle className="text-indigo-600 dark:text-indigo-400" size={20} /> Yangi operatsiya
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2 tracking-widest">Ism</label>
-            <input 
-              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 transition-all font-medium" 
-              value={form.person_name} 
-              onChange={e => setForm({...form, person_name: e.target.value})} 
-              placeholder="Foydalanuvchi ismi"
-            />
+        <h3 className="font-bold mb-6 text-slate-800 dark:text-white flex items-center gap-2"><PlusCircle size={20}/> Yangi operatsiya</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Shaxs ismi</label>
+            <input className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 dark:text-white" value={form.person_name} onChange={e => setForm({...form, person_name: e.target.value})} placeholder="Kimga/Kimdan?" />
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2 tracking-widest">Turi</label>
-            <select 
-              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent outline-none focus:border-indigo-500 font-bold appearance-none cursor-pointer" 
-              value={form.type} 
-              onChange={e => setForm({...form, type: e.target.value})}
-            >
-              <option value="gave">Berdim (+)</option>
-              <option value="took">Oldim (-)</option>
-            </select>
+
+          {/* USD Input gibrid */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 flex justify-between">USD ($) 
+              <span className={form.usd_type === 'gave' ? 'text-emerald-500' : 'text-rose-500'}>{form.usd_type === 'gave' ? 'Berdim (+)' : 'Oldim (-)'}</span>
+            </label>
+            <div className="flex gap-2">
+              <input type="number" className="flex-1 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 dark:text-white" value={form.amount_usd} onChange={e => setForm({...form, amount_usd: e.target.value})} placeholder="0" />
+              <button onClick={() => setForm({...form, usd_type: form.usd_type === 'gave' ? 'took' : 'gave'})} className={`p-4 rounded-2xl transition-all ${form.usd_type === 'gave' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                {form.usd_type === 'gave' ? <ArrowUpRight size={20}/> : <ArrowDownLeft size={20}/>}
+              </button>
+            </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2 tracking-widest">USD</label>
-            <input 
-              type="number" 
-              placeholder="0"
-              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent focus:border-indigo-500 font-medium" 
-              value={form.amount_usd} 
-              onChange={e => setForm({...form, amount_usd: e.target.value})} 
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2 tracking-widest">UZS</label>
-            <input 
-              type="number" 
-              placeholder="0"
-              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent focus:border-indigo-500 font-medium" 
-              value={form.amount_uzs} 
-              onChange={e => setForm({...form, amount_uzs: e.target.value})} 
-            />
+
+          {/* UZS Input gibrid */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 flex justify-between">UZS (So'm)
+              <span className={form.uzs_type === 'gave' ? 'text-emerald-500' : 'text-rose-500'}>{form.uzs_type === 'gave' ? 'Berdim (+)' : 'Oldim (-)'}</span>
+            </label>
+            <div className="flex gap-2">
+              <input type="number" className="flex-1 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 dark:text-white" value={form.amount_uzs} onChange={e => setForm({...form, amount_uzs: e.target.value})} placeholder="0" />
+              <button onClick={() => setForm({...form, uzs_type: form.uzs_type === 'gave' ? 'took' : 'gave'})} className={`p-4 rounded-2xl transition-all ${form.uzs_type === 'gave' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                {form.uzs_type === 'gave' ? <ArrowUpRight size={20}/> : <ArrowDownLeft size={20}/>}
+              </button>
+            </div>
           </div>
         </div>
-        <button 
-          onClick={handleSave} 
-          className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-black tracking-[3px] transition-all shadow-lg shadow-indigo-200 dark:shadow-none uppercase"
-        >
-          Ma'lumotni saqlash
-        </button>
+        <button onClick={handleSave} className="mt-8 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-black tracking-widest transition-all uppercase">Ma'lumotni saqlash</button>
       </div>
     </div>
   );
