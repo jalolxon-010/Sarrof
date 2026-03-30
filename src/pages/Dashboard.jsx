@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/api';
-import { PlusCircle, Wallet, DollarSign } from 'lucide-react';
+import { PlusCircle, Wallet, DollarSign, CheckCircle2, AlertCircle, X } from 'lucide-react';
 
 const Dashboard = () => {
   const [list, setList] = useState([]);
   const [form, setForm] = useState({ person_name: '', amount_usd: '', amount_uzs: '', type: 'gave' });
   const [kurs, setKurs] = useState(0);
+  
+  // Modal uchun statelar
+  const [modal, setModal] = useState({ show: false, type: '', title: '', message: '' });
 
   useEffect(() => { 
     fetchAll(); 
@@ -30,26 +33,44 @@ const Dashboard = () => {
     }
   };
 
+  const showNotification = (type, title, message) => {
+    setModal({ show: true, type, title, message });
+    if (type === 'success') {
+      setTimeout(() => setModal({ ...modal, show: false }), 3000);
+    }
+  };
+
   const handleSave = async () => {
-    if(!form.person_name) return alert("Ismni yozing");
-    
+    // 1. Ism tekshiruvi
+    if(!form.person_name.trim()) {
+        return showNotification('error', 'Xatolik', 'Iltimos, ismni kiriting');
+    }
+
+    // 2. Kamida bitta maydon to'ldirilgan bo'lishi kerak mantiqi
+    const usd = parseFloat(form.amount_usd) || 0;
+    const uzs = parseFloat(form.amount_uzs) || 0;
+
+    if (usd <= 0 && uzs <= 0) {
+        return showNotification('error', 'Xatolik', 'Kamida bitta maydonga (USD yoki UZS) miqdor kiriting');
+    }
+
     try {
-      // Bo'sh maydonlarni 0 qilib yuborish (ixtiyoriy, backend o'zi hal qilmasa)
+      // Backendga yuboriladigan ma'lumotni tozalash
       const dataToSave = {
-        ...form,
-        amount_usd: form.amount_usd || 0,
-        amount_uzs: form.amount_uzs || 0
+        person_name: form.person_name,
+        type: form.type,
+        amount_usd: usd,
+        amount_uzs: uzs
       };
 
       await API.post('/transactions/add', dataToSave);
       
-      // Formani tozalash
       setForm({ person_name: '', amount_usd: '', amount_uzs: '', type: 'gave' });
       fetchAll();
-      alert("Muvaffaqiyatli saqlandi!");
+      showNotification('success', 'Tayyor!', 'Ma’lumot muvaffaqiyatli saqlandi');
     } catch (error) {
       console.error("Saqlashda xato:", error);
-      alert("Xatolik yuz berdi.");
+      showNotification('error', 'Xatolik', 'Server bilan bog‘lanishda xatolik yuz berdi');
     }
   };
 
@@ -63,16 +84,40 @@ const Dashboard = () => {
   const format = (n) => new Intl.NumberFormat().format(n);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Sarlavha va Kurs */}
+    <div className="relative space-y-8 animate-in fade-in duration-500">
+      
+      {/* --- CUSTOM MODAL --- */}
+      {modal.show && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 dark:border-slate-700 text-center relative overflow-hidden">
+            <button onClick={() => setModal({...modal, show: false})} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600"><X size={20}/></button>
+            
+            <div className={`mx-auto w-20 h-20 rounded-3xl flex items-center justify-center mb-6 ${modal.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'}`}>
+              {modal.type === 'success' ? <CheckCircle2 size={44} /> : <AlertCircle size={44} />}
+            </div>
+            
+            <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-2">{modal.title}</h3>
+            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">{modal.message}</p>
+            
+            <button 
+              onClick={() => setModal({...modal, show: false})}
+              className={`w-full py-4 rounded-2xl font-bold tracking-wide transition-all ${modal.type === 'success' ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-rose-500 text-white hover:bg-rose-600'}`}
+            >
+              Tushunarli
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- HEADER --- */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-black text-slate-800 dark:text-white">Asosiy Panel</h1>
-        <div className="text-[10px] md:text-xs font-bold px-3 py-1 bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 rounded-full border border-indigo-200 dark:border-indigo-500/30">
-          Kurs: 1$ = {format(kurs)} UZS
+        <div className="text-[10px] md:text-xs font-bold px-3 py-1 bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 rounded-full border border-indigo-200 dark:border-indigo-500/30 tracking-tighter">
+          KURS: 1$ = {format(kurs)} UZS
         </div>
       </div>
 
-      {/* Kartalar */}
+      {/* --- CARDS --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="relative overflow-hidden bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm transition-all">
           <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">USD Balans</p>
@@ -91,19 +136,19 @@ const Dashboard = () => {
 
         <div className="bg-indigo-600 p-6 rounded-[2rem] text-white shadow-xl shadow-indigo-200 dark:shadow-none relative overflow-hidden">
           <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">Umumiy (So'mda)</p>
-          <h2 className="text-3xl font-black mt-2">{format((totals.uzs + totals.usd * kurs).toFixed(0))}</h2>
+          <h2 className="text-3xl font-black mt-2 tracking-tighter">{format((totals.uzs + totals.usd * kurs).toFixed(0))}</h2>
           <div className="absolute top-0 right-0 p-4 opacity-20"><Wallet size={40} /></div>
         </div>
       </div>
 
-      {/* Input Form */}
-      <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-xl transition-all">
+      {/* --- FORM --- */}
+      <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-xl">
         <h3 className="text-lg font-bold mb-6 text-slate-800 dark:text-white flex items-center gap-2">
           <PlusCircle className="text-indigo-600 dark:text-indigo-400" size={20} /> Yangi operatsiya
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">Ism</label>
+            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2 tracking-widest">Ism</label>
             <input 
               className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 transition-all font-medium" 
               value={form.person_name} 
@@ -112,7 +157,7 @@ const Dashboard = () => {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">Turi</label>
+            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2 tracking-widest">Turi</label>
             <select 
               className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent outline-none focus:border-indigo-500 font-bold appearance-none cursor-pointer" 
               value={form.type} 
@@ -123,7 +168,7 @@ const Dashboard = () => {
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">USD</label>
+            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2 tracking-widest">USD</label>
             <input 
               type="number" 
               placeholder="0"
@@ -133,7 +178,7 @@ const Dashboard = () => {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">UZS</label>
+            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2 tracking-widest">UZS</label>
             <input 
               type="number" 
               placeholder="0"
@@ -145,7 +190,7 @@ const Dashboard = () => {
         </div>
         <button 
           onClick={handleSave} 
-          className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-black tracking-widest transition-all shadow-lg shadow-indigo-200 dark:shadow-none uppercase"
+          className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-black tracking-[3px] transition-all shadow-lg shadow-indigo-200 dark:shadow-none uppercase"
         >
           Ma'lumotni saqlash
         </button>
