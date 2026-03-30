@@ -5,12 +5,11 @@ import { PlusCircle, Wallet, DollarSign } from 'lucide-react';
 const Dashboard = () => {
   const [list, setList] = useState([]);
   const [form, setForm] = useState({ person_name: '', amount_usd: '', amount_uzs: '', type: 'gave' });
-  // Statik kurs o'rniga state ishlatamiz
   const [kurs, setKurs] = useState(0);
 
   useEffect(() => { 
     fetchAll(); 
-    fetchKurs(); // Kursni ham yuklaymiz
+    fetchKurs(); 
   }, []);
 
   const fetchAll = async () => { 
@@ -22,7 +21,6 @@ const Dashboard = () => {
     } 
   };
 
-  // Kursni bazadan olish funksiyasi
   const fetchKurs = async () => {
     try {
       const res = await API.get('/settings/usd-rate');
@@ -36,7 +34,16 @@ const Dashboard = () => {
     if(!form.person_name) return alert("Ismni yozing");
     
     try {
-      await API.post('/transactions/add', form);
+      // Bo'sh maydonlarni 0 qilib yuborish (ixtiyoriy, backend o'zi hal qilmasa)
+      const dataToSave = {
+        ...form,
+        amount_usd: form.amount_usd || 0,
+        amount_uzs: form.amount_uzs || 0
+      };
+
+      await API.post('/transactions/add', dataToSave);
+      
+      // Formani tozalash
       setForm({ person_name: '', amount_usd: '', amount_uzs: '', type: 'gave' });
       fetchAll();
       alert("Muvaffaqiyatli saqlandi!");
@@ -44,13 +51,6 @@ const Dashboard = () => {
       console.error("Saqlashda xato:", error);
       alert("Xatolik yuz berdi.");
     }
-  };
-
-  // USD kiritilganda UZS ni avtomatik hisoblash
-  const handleUsdChange = (val) => {
-    const usdVal = val;
-    const uzsVal = usdVal ? (parseFloat(usdVal) * kurs).toFixed(0) : '';
-    setForm({ ...form, amount_usd: usdVal, amount_uzs: uzsVal });
   };
 
   const totals = list.reduce((acc, curr) => {
@@ -64,6 +64,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Sarlavha va Kurs */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-black text-slate-800 dark:text-white">Asosiy Panel</h1>
         <div className="text-[10px] md:text-xs font-bold px-3 py-1 bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 rounded-full border border-indigo-200 dark:border-indigo-500/30">
@@ -71,6 +72,7 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Kartalar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="relative overflow-hidden bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm transition-all">
           <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">USD Balans</p>
@@ -94,6 +96,7 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Input Form */}
       <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-xl transition-all">
         <h3 className="text-lg font-bold mb-6 text-slate-800 dark:text-white flex items-center gap-2">
           <PlusCircle className="text-indigo-600 dark:text-indigo-400" size={20} /> Yangi operatsiya
@@ -102,15 +105,16 @@ const Dashboard = () => {
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">Ism</label>
             <input 
-              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 transition-all" 
+              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 transition-all font-medium" 
               value={form.person_name} 
               onChange={e => setForm({...form, person_name: e.target.value})} 
+              placeholder="Foydalanuvchi ismi"
             />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">Turi</label>
             <select 
-              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent outline-none focus:border-indigo-500 font-bold" 
+              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent outline-none focus:border-indigo-500 font-bold appearance-none cursor-pointer" 
               value={form.type} 
               onChange={e => setForm({...form, type: e.target.value})}
             >
@@ -122,16 +126,18 @@ const Dashboard = () => {
             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">USD</label>
             <input 
               type="number" 
-              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent focus:border-indigo-500" 
+              placeholder="0"
+              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent focus:border-indigo-500 font-medium" 
               value={form.amount_usd} 
-              onChange={e => handleUsdChange(e.target.value)} // Avtomatik hisoblash chaqirildi
+              onChange={e => setForm({...form, amount_usd: e.target.value})} 
             />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-2">UZS</label>
             <input 
               type="number" 
-              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent focus:border-indigo-500" 
+              placeholder="0"
+              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white p-4 rounded-2xl border border-transparent focus:border-indigo-500 font-medium" 
               value={form.amount_uzs} 
               onChange={e => setForm({...form, amount_uzs: e.target.value})} 
             />
@@ -139,9 +145,9 @@ const Dashboard = () => {
         </div>
         <button 
           onClick={handleSave} 
-          className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-black tracking-widest transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
+          className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-black tracking-widest transition-all shadow-lg shadow-indigo-200 dark:shadow-none uppercase"
         >
-          MA'LUMOTNI SAQLASH
+          Ma'lumotni saqlash
         </button>
       </div>
     </div>
