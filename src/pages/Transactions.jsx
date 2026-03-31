@@ -32,6 +32,27 @@ const Transactions = () => {
     return () => document.removeEventListener("mousedown", closeMenu);
   }, []);
 
+  // Kalkulyator funksiyasi
+  const calculateInput = (value) => {
+    try {
+      if (/[+\-*/]/.test(value)) {
+        const result = new Function(`return ${value.replace(/[^-()\d/*+.]/g, '')}`)();
+        return result.toString();
+      }
+      return value;
+    } catch (e) { return value; }
+  };
+
+  const handleEditKeyDown = (e, field) => {
+    if (e.key === 'Enter') {
+      const result = calculateInput(e.target.value);
+      setEditModal({
+        ...editModal,
+        data: { ...editModal.data, [field]: result }
+      });
+    }
+  };
+
   const showNote = (type, title, message) => {
     setNotification({ show: true, type, title, message });
     if (type === 'success') setTimeout(() => setNotification(p => ({ ...p, show: false })), 2000);
@@ -56,7 +77,6 @@ const Transactions = () => {
       show: true,
       data: {
         ...item,
-        // Backenddan kelgan qiymatga qarab turini aniqlash
         usd_type: parseFloat(item.amount_usd) >= 0 ? 'gave' : 'took',
         uzs_type: parseFloat(item.amount_uzs) >= 0 ? 'gave' : 'took',
         amount_usd: Math.abs(item.amount_usd) || '',
@@ -71,10 +91,14 @@ const Transactions = () => {
     if(!data.person_name.trim()) return showNote('error', 'Xato', 'Ismni kiriting');
 
     try {
+      // Saqlashdan oldin yana bir bor hisoblab yuboramiz
+      const finalUsd = calculateInput(data.amount_usd.toString());
+      const finalUzs = calculateInput(data.amount_uzs.toString());
+
       const payload = {
         person_name: data.person_name,
-        amount_usd: data.usd_type === 'took' ? -Math.abs(data.amount_usd) : Math.abs(data.amount_usd),
-        amount_uzs: data.uzs_type === 'took' ? -Math.abs(data.amount_uzs) : Math.abs(data.amount_uzs)
+        amount_usd: data.usd_type === 'took' ? -Math.abs(finalUsd) : Math.abs(finalUsd),
+        amount_uzs: data.uzs_type === 'took' ? -Math.abs(finalUzs) : Math.abs(finalUzs)
       };
 
       await API.put(`/transactions/${data.id}`, payload);
@@ -123,7 +147,7 @@ const Transactions = () => {
         </div>
       )}
 
-      {/* EDIT MODAL - JIDDIY VA TARTIBLI DIZAYN */}
+      {/* EDIT MODAL */}
       {editModal.show && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
           <div className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-[2.5rem] shadow-2xl border dark:border-slate-700 overflow-hidden animate-in zoom-in-95">
@@ -134,7 +158,6 @@ const Transactions = () => {
             </div>
 
             <div className="p-8 space-y-6">
-              {/* Ism */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Foydalanuvchi ismi</label>
                 <div className="relative">
@@ -143,13 +166,19 @@ const Transactions = () => {
                 </div>
               </div>
 
-              {/* Valyuta bloklari */}
               <div className="grid grid-cols-1 gap-4">
                 {/* USD */}
                 <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-2xl border dark:border-slate-700">
                    <div className="flex-1">
                       <label className="text-[9px] font-bold text-slate-400 uppercase px-3">Dollar ($)</label>
-                      <input type="number" className="w-full bg-transparent px-3 py-1 outline-none dark:text-white font-black text-lg" value={editModal.data.amount_usd} onChange={e => setEditModal({...editModal, data: {...editModal.data, amount_usd: e.target.value}})} placeholder="0.00" />
+                      <input 
+                        type="text" 
+                        className="w-full bg-transparent px-3 py-1 outline-none dark:text-white font-black text-lg" 
+                        value={editModal.data.amount_usd} 
+                        onChange={e => setEditModal({...editModal, data: {...editModal.data, amount_usd: e.target.value}})}
+                        onKeyDown={(e) => handleEditKeyDown(e, 'amount_usd')}
+                        placeholder="0.00" 
+                      />
                    </div>
                    <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl shadow-sm border dark:border-slate-700">
                       <button onClick={() => setEditModal({...editModal, data: {...editModal.data, usd_type: 'gave'}})} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${editModal.data.usd_type === 'gave' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-400'}`}>BERDIM (+)</button>
@@ -161,7 +190,14 @@ const Transactions = () => {
                 <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-2xl border dark:border-slate-700">
                    <div className="flex-1">
                       <label className="text-[9px] font-bold text-slate-400 uppercase px-3">So'm (UZS)</label>
-                      <input type="number" className="w-full bg-transparent px-3 py-1 outline-none dark:text-white font-black text-lg" value={editModal.data.amount_uzs} onChange={e => setEditModal({...editModal, data: {...editModal.data, amount_uzs: e.target.value}})} placeholder="0" />
+                      <input 
+                        type="text" 
+                        className="w-full bg-transparent px-3 py-1 outline-none dark:text-white font-black text-lg" 
+                        value={editModal.data.amount_uzs} 
+                        onChange={e => setEditModal({...editModal, data: {...editModal.data, amount_uzs: e.target.value}})}
+                        onKeyDown={(e) => handleEditKeyDown(e, 'amount_uzs')}
+                        placeholder="0" 
+                      />
                    </div>
                    <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl shadow-sm border dark:border-slate-700">
                       <button onClick={() => setEditModal({...editModal, data: {...editModal.data, uzs_type: 'gave'}})} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${editModal.data.uzs_type === 'gave' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-400'}`}>BERDIM (+)</button>
@@ -177,43 +213,45 @@ const Transactions = () => {
       )}
 
       {/* JADVAL */}
-      <div className="p-6 border-b border-slate-50 dark:border-slate-700">
-        <h2 className="text-xl font-bold text-slate-800 dark:text-white">Amallar Tarixi</h2>
+      <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20">
+        <h2 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Tarix</h2>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/50 dark:bg-slate-900/30 text-slate-400 text-[10px] uppercase font-black tracking-widest">
-              <th className="px-6 py-4">Vaqt</th>
-              <th className="px-6 py-4">Foydalanuvchi</th>
-              <th className="px-6 py-4 text-center">USD ($)</th>
-              <th className="px-6 py-4 text-center">UZS (So'm)</th>
-              <th className="px-6 py-4 text-right">Amal</th>
+            <tr className="bg-slate-100 dark:bg-slate-900/50 text-slate-500 text-[9px] uppercase font-black tracking-widest border-b dark:border-slate-700">
+              <th className="px-4 py-3">Vaqt</th>
+              <th className="px-4 py-3">Foydalanuvchi</th>
+              <th className="px-4 py-3 text-center">USD ($)</th>
+              <th className="px-4 py-3 text-center">UZS (So'm)</th>
+              <th className="px-4 py-3 text-right">Amal</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {list.map((item) => (
-              <tr key={item.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-900/20 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-[11px] font-medium text-slate-400">
-                  <div className="flex items-center gap-2"><Clock size={12}/> {formatDate(item.createdAt || item.date)}</div>
+              <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                <td className="px-4 py-2 whitespace-nowrap text-[10px] font-bold text-slate-400">
+                  <div className="flex items-center gap-1.5"><Clock size={11}/> {formatDate(item.createdAt || item.date)}</div>
                 </td>
-                <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-200 capitalize">{item.person_name}</td>
-                <td className={`px-6 py-4 text-center font-black ${item.amount_usd > 0 ? 'text-emerald-500' : item.amount_usd < 0 ? 'text-rose-500' : 'text-slate-300'}`}>
+                <td className="px-4 py-2 font-black text-slate-900 dark:text-slate-100 text-sm capitalize leading-none">
+                  {item.person_name}
+                </td>
+                <td className={`px-4 py-2 text-center font-black text-sm ${item.amount_usd > 0 ? 'text-emerald-600' : item.amount_usd < 0 ? 'text-rose-600' : 'text-slate-300'}`}>
                   {item.amount_usd > 0 ? '+' : item.amount_usd < 0 ? '-' : ''}{format(item.amount_usd)} $
                 </td>
-                <td className={`px-6 py-4 text-center font-black ${item.amount_uzs > 0 ? 'text-emerald-500' : item.amount_uzs < 0 ? 'text-rose-500' : 'text-slate-300'}`}>
+                <td className={`px-4 py-2 text-center font-black text-sm ${item.amount_uzs > 0 ? 'text-emerald-600' : item.amount_uzs < 0 ? 'text-rose-600' : 'text-slate-300'}`}>
                   {item.amount_uzs > 0 ? '+' : item.amount_uzs < 0 ? '-' : ''}{format(item.amount_uzs)}
                 </td>
-                <td className="px-6 py-4 text-right relative">
-                  <button onClick={() => setActiveMenu(activeMenu === item.id ? null : item.id)} className="p-2 text-slate-300 hover:text-indigo-600 transition-all"><MoreVertical size={18} /></button>
+                <td className="px-4 py-2 text-right relative">
+                  <button onClick={() => setActiveMenu(activeMenu === item.id ? null : item.id)} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-all"><MoreVertical size={16} /></button>
                   {activeMenu === item.id && (
-                    <div ref={menuRef} className="absolute right-12 top-0 z-50 w-44 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border dark:border-slate-700 p-1.5 ring-4 ring-black/5">
-                      <button onClick={() => startEdit(item)} className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all">
-                        <Edit2 size={14} /> TAHRIRLASH
+                    <div ref={menuRef} className="absolute right-10 top-0 z-50 w-40 bg-white dark:bg-slate-900 shadow-xl rounded-xl border dark:border-slate-700 p-1 ring-2 ring-black/5">
+                      <button onClick={() => startEdit(item)} className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition-all">
+                        <Edit2 size={13} /> TAHRIRLASH
                       </button>
-                      <button onClick={() => askDelete(item.id)} className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all">
-                        <Trash2 size={14} /> O'CHIRISH
+                      <button onClick={() => askDelete(item.id)} className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all">
+                        <Trash2 size={13} /> O'CHIRISH
                       </button>
                     </div>
                   )}
