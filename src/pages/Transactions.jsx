@@ -147,11 +147,14 @@ const Transactions = () => {
 
       {/* 3. QARZDOR QO'SHISH TUGMASI */}
       <button 
-        onClick={() => setAddModal({ ...addModal, show: true })}
-        className="w-full py-4 bg-slate-900 dark:bg-indigo-500 text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-xl uppercase tracking-widest"
-      >
-        <Plus size={20} /> Qarzdor Qo'shish
-      </button>
+  onClick={() => setAddModal({ ...addModal, show: true })}
+  className="w-full py-5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-[2rem] font-black flex items-center justify-center gap-3 transition-all shadow-lg shadow-indigo-200 dark:shadow-none uppercase tracking-[0.2em] text-xs group"
+>
+  <div className="bg-white/20 p-1 rounded-lg group-hover:scale-110 transition-transform">
+    <Plus size={18} strokeWidth={3} />
+  </div>
+  Qarzdor Qo'shish
+</button>
 
       {/* 4. JADVAL QISMI */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
