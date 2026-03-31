@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/api';
-import { PlusCircle, Wallet, DollarSign, CheckCircle2, AlertCircle, X, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { PlusCircle, Wallet, DollarSign, CheckCircle2, AlertCircle, X, ArrowUpRight, ArrowDownLeft, Loader2 } from 'lucide-react';
 
 const Dashboard = () => {
   const [list, setList] = useState([]);
   const [kurs, setKurs] = useState(0);
+  const [loading, setLoading] = useState(false); // Tugmani bloklash uchun
   const [form, setForm] = useState({ 
     person_name: '', 
     amount_usd: '', 
@@ -38,17 +39,40 @@ const Dashboard = () => {
     if (type === 'success') setTimeout(() => setModal(prev => ({ ...prev, show: false })), 2500);
   };
 
+  const calculateInput = (value) => {
+    try {
+      if (/[+\-*/]/.test(value)) {
+        const result = new Function(`return ${value.replace(/[^-()\d/*+.]/g, '')}`)();
+        return result.toString();
+      }
+      return value;
+    } catch (e) { return value; }
+  };
+
+  const handleKeyDown = (e, field) => {
+    if (e.key === 'Enter') {
+      const result = calculateInput(e.target.value);
+      setForm({ ...form, [field]: result });
+    }
+  };
+
   const handleSave = async () => {
+    // 1. Agar allaqachon yuklanayotgan bo'lsa, funksiyani to'xtatish
+    if (loading) return; 
+
     if(!form.person_name.trim()) return showNotification('error', 'Xato', 'Ismni kiriting');
     
-    const usd = parseFloat(form.amount_usd) || 0;
-    const uzs = parseFloat(form.amount_uzs) || 0;
+    const usdVal = calculateInput(form.amount_usd.toString());
+    const uzsVal = calculateInput(form.amount_uzs.toString());
+    const usd = parseFloat(usdVal) || 0;
+    const uzs = parseFloat(uzsVal) || 0;
 
     if (usd === 0 && uzs === 0) return showNotification('error', 'Xato', 'Miqdor kiriting');
 
     try {
-      const mainType = usd > 0 ? form.usd_type : form.uzs_type;
+      setLoading(true); // 2. Yuklashni boshlash (Tugma bloklanadi)
 
+      const mainType = usd > 0 ? form.usd_type : form.uzs_type;
       const dataToSave = {
         person_name: form.person_name,
         amount_usd: form.usd_type === 'took' ? -Math.abs(usd) : Math.abs(usd),
@@ -58,12 +82,15 @@ const Dashboard = () => {
       };
 
       await API.post('/transactions/add', dataToSave);
+      
       setForm({ person_name: '', amount_usd: '', usd_type: 'gave', amount_uzs: '', uzs_type: 'gave' });
-      fetchAll();
+      await fetchAll();
       showNotification('success', 'Saqlandi', 'Ma’lumot muvaffaqiyatli qo‘shildi');
     } catch (error) {
       console.error("Saqlashda xato:", error.response?.data || error.message);
-      showNotification('error', 'Server Xatosi', 'Backend ma’lumotni qabul qilmadi (500)');
+      showNotification('error', 'Server Xatosi', 'Backend ma’lumotni qabul qilmadi');
+    } finally {
+      setLoading(false); // 3. Har qanday holatda (xato bo'lsa ham) blokdan yechish
     }
   };
 
@@ -111,7 +138,6 @@ const Dashboard = () => {
         <div className="bg-indigo-600 p-6 rounded-[2rem] text-white shadow-xl relative overflow-hidden">
           <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">Umumiy Balans ($ da)</p>
           <h2 className="text-3xl font-black mt-2">
-            {/* So'mni kursga bo'lib dollarga qo'shish */}
             {format((totals.usd + (totals.uzs / (kurs || 1))).toFixed(2))} $
           </h2>
           <DollarSign className="absolute -right-4 -bottom-4 opacity-10" size={120} />
@@ -131,7 +157,7 @@ const Dashboard = () => {
               <span className={form.usd_type === 'gave' ? 'text-emerald-500' : 'text-rose-500'}>{form.usd_type === 'gave' ? 'Berdim (+)' : 'Oldim (-)'}</span>
             </label>
             <div className="flex gap-2">
-              <input type="number" className="flex-1 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 dark:text-white" value={form.amount_usd} onChange={e => setForm({...form, amount_usd: e.target.value})} placeholder="0" />
+              <input type="text" className="flex-1 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 dark:text-white" value={form.amount_usd} onChange={e => setForm({...form, amount_usd: e.target.value})} onKeyDown={(e) => handleKeyDown(e, 'amount_usd')} placeholder="0" />
               <button onClick={() => setForm({...form, usd_type: form.usd_type === 'gave' ? 'took' : 'gave'})} className={`p-4 rounded-2xl transition-all ${form.usd_type === 'gave' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
                 {form.usd_type === 'gave' ? <ArrowUpRight size={20}/> : <ArrowDownLeft size={20}/>}
               </button>
@@ -143,14 +169,29 @@ const Dashboard = () => {
               <span className={form.uzs_type === 'gave' ? 'text-emerald-500' : 'text-rose-500'}>{form.uzs_type === 'gave' ? 'Berdim (+)' : 'Oldim (-)'}</span>
             </label>
             <div className="flex gap-2">
-              <input type="number" className="flex-1 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 dark:text-white" value={form.amount_uzs} onChange={e => setForm({...form, amount_uzs: e.target.value})} placeholder="0" />
+              <input type="text" className="flex-1 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none border border-transparent focus:border-indigo-500 dark:text-white" value={form.amount_uzs} onChange={e => setForm({...form, amount_uzs: e.target.value})} onKeyDown={(e) => handleKeyDown(e, 'amount_uzs')} placeholder="0" />
               <button onClick={() => setForm({...form, uzs_type: form.uzs_type === 'gave' ? 'took' : 'gave'})} className={`p-4 rounded-2xl transition-all ${form.uzs_type === 'gave' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
                 {form.uzs_type === 'gave' ? <ArrowUpRight size={20}/> : <ArrowDownLeft size={20}/>}
               </button>
             </div>
           </div>
         </div>
-        <button onClick={handleSave} className="mt-8 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-black tracking-widest transition-all uppercase">Ma'lumotni saqlash</button>
+        
+        {/* TUGMA O'ZGARTIRILDI: disabled xossasi qo'shildi */}
+        <button 
+          onClick={handleSave} 
+          disabled={loading} 
+          className={`mt-8 w-full flex items-center justify-center gap-3 py-5 rounded-2xl font-black tracking-widest transition-all uppercase ${loading ? 'bg-slate-300 cursor-not-allowed text-slate-500' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="animate-spin" size={20} />
+              Saqlanmoqda...
+            </>
+          ) : (
+            "Ma'lumotni saqlash"
+          )}
+        </button>
       </div>
     </div>
   );
