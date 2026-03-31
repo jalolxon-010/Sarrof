@@ -47,16 +47,13 @@ const Dashboard = () => {
     if (usd === 0 && uzs === 0) return showNotification('error', 'Xato', 'Miqdor kiriting');
 
     try {
-      // BACKEND UCHUN MOSLASHTIRISH:
-      // Agar backend faqat bitta 'type' qabul qilsa, asosiy miqdorga qarab belgilaymiz
       const mainType = usd > 0 ? form.usd_type : form.uzs_type;
 
       const dataToSave = {
         person_name: form.person_name,
-        // Backend musbat son kutayotgan bo'lsa Math.abs ishlatamiz
         amount_usd: form.usd_type === 'took' ? -Math.abs(usd) : Math.abs(usd),
         amount_uzs: form.uzs_type === 'took' ? -Math.abs(uzs) : Math.abs(uzs),
-        type: mainType, // Backenddagi enumga moslash (gave/took)
+        type: mainType, 
         date: new Date().toISOString()
       };
 
@@ -106,13 +103,18 @@ const Dashboard = () => {
           <h2 className={`text-3xl font-black mt-2 ${totals.usd >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{format(totals.usd)} $</h2>
           <DollarSign className="absolute -right-4 -bottom-4 text-slate-50 dark:text-slate-700/10" size={120} />
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm relative overflow-hidden">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">UZS Balans</p>
           <h2 className={`text-3xl font-black mt-2 ${totals.uzs >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{format(totals.uzs)}</h2>
+          <Wallet className="absolute -right-4 -bottom-4 text-slate-50 dark:text-slate-700/10" size={100} />
         </div>
-        <div className="bg-indigo-600 p-6 rounded-[2rem] text-white shadow-xl">
-          <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">Umumiy (So'mda)</p>
-          <h2 className="text-3xl font-black mt-2">{format((totals.uzs + totals.usd * kurs).toFixed(0))}</h2>
+        <div className="bg-indigo-600 p-6 rounded-[2rem] text-white shadow-xl relative overflow-hidden">
+          <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">Umumiy Balans ($ da)</p>
+          <h2 className="text-3xl font-black mt-2">
+            {/* So'mni kursga bo'lib dollarga qo'shish */}
+            {format((totals.usd + (totals.uzs / (kurs || 1))).toFixed(2))} $
+          </h2>
+          <DollarSign className="absolute -right-4 -bottom-4 opacity-10" size={120} />
         </div>
       </div>
 
