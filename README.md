@@ -1,12 +1,53 @@
-# React + Vite
+# Sarrof Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sarrof Frontend is a React-based application for managing debts and credits in both local currency (UZS) and USD.  
+The app works together with a backend for authentication and data storage.
 
-Currently, two official plugins are available:
+Users can log in with a username and password (both must match), then access three main sections: Dashboard, Operations List, and Currency Rate Management.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## 🚀 Features
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 1️⃣ Dashboard
+- Add new debts or credits
+- Three input fields:
+  1. Name of the debtor/creditor
+  2. Amount in local currency (UZS)
+  3. Amount in USD ($)
+- Save data to the system
+- Overview cards:
+  - Total sum in UZS
+  - Total sum in USD
+  - Combined view (UZS + USD)
+
+### 2️⃣ Operations List
+- Displays all saved entries
+- Shows date and time (up to minutes)
+- Edit or delete any record
+
+### 3️⃣ Currency Rate
+- Enter current USD rate
+- Dashboard calculations automatically update according to entered rate
+
+---
+
+## 🛠 Tech Stack
+
+**Frontend:**  
+- React  
+- JavaScript (ES6+)  
+- CSS / Tailwind  
+
+**Backend:**  
+- Node.js + Express (authentication + data handling)
+
+---
+
+## ⚙️ Installation
+
+### 1. Clone repository
+
+```bash
+git clone https://github.com/jalolxon-010/Sarrof.git
+cd Sarrof
